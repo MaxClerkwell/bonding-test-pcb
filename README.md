@@ -44,3 +44,11 @@ KiCad 10 und ein Release mit dem fertigen ZIP für JLCPCB.
 ```sh
 git tag v1.0.1 && git push origin v1.0.1
 ```
+
+## Lizenz
+
+© 2026 Stephan Bökelmann. Alles in diesem Repository – Platine, Fertigungsdaten,
+Skript und Dokumentation – steht unter
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.de) (siehe `LICENSE`).
+Nutzung, Änderung und Weitergabe sind frei, auch kommerziell, solange der Urheber
+genannt wird. Zitierhinweis: `CITATION.cff`.

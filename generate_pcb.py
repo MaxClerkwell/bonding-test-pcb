@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: CC-BY-4.0
+# Copyright (c) 2026 Stephan Bökelmann
 """Erzeugt bonding_test.kicad_pcb: einlagige Testplatine zum Einstellen eines Drahtbonders.
 
 Aufruf:  python3 generate_pcb.py
