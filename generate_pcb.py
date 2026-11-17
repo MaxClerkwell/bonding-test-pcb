@@ -1,56 +1,60 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: CC-BY-4.0
 # Copyright (c) 2026 Stephan Bökelmann
-"""Erzeugt bonding_test.kicad_pcb: einlagige Testplatine zum Einstellen eines Drahtbonders.
+"""Generates bonding_test.kicad_pcb: single-layer test board for setting up a wire bonder.
 
-Aufruf:  python3 generate_pcb.py
-Alle Maße in mm. Parameter unten anpassen und neu erzeugen.
+Created by Stephan Bökelmann while working as a research associate at
+Ruhr University Bochum, Institute for Experimental Physics I (EP1),
+Hadrons and Nuclei group.
+
+Usage:  python3 generate_pcb.py
+All dimensions in mm. Adjust the parameters below and regenerate.
 """
 import os
 import string
 import pcbnew
 from pcbnew import FromMM, VECTOR2I
 
-# ---- Platine -------------------------------------------------------------
-BOARD_W, BOARD_H = 200.0, 100.0          # Querformat
+# ---- Board ---------------------------------------------------------------
+BOARD_W, BOARD_H = 200.0, 100.0          # landscape
 
-# ---- Pads (JLCPCB-Limits, 1-2 Lagen, 1 oz) -------------------------------
-PAD_W = 0.10          # min. Leiterbahnbreite
-PAD_GAP = 0.30        # Abstand benachbarter Pärchen (JLC-Minimum wäre 0.15)
+# ---- Pads (JLCPCB limits, 1-2 layers, 1 oz) ------------------------------
+PAD_W = 0.10          # min. trace width
+PAD_GAP = 0.30        # spacing between neighbouring pairs (JLC minimum would be 0.15)
 PAD_LEN = 5.0
-PAIR_GAP = 0.5        # Lücke zwischen den beiden Pads eines Pärchens (Bondstrecke)
+PAIR_GAP = 0.5        # gap between the two pads of a pair (bond span)
 
-# ---- Tabelle -------------------------------------------------------------
-PAIRS_PER_BLOCK = 10  # Pärchen pro Tabellenzelle
-COL_GAP = 1.0         # Lücke zwischen Zellen in x
-ROW_GAP = 0.6         # Lücke zwischen Zellen in y (statt PAD_GAP)
-MARGIN_L, MARGIN_R = 6.0, 3.0            # links Platz für Zeilenbuchstaben
-MARGIN_T, MARGIN_B = 4.5, 4.5            # oben/unten Platz für Spaltennummern
-ID_COLS, ID_ROWS = 3, 3   # unten rechts freigelassene Zellen für das Beschriftungsfeld
-MASK_MARGIN = 0.1     # Lötstopp-Freistellung um jede Zelle
+# ---- Table ---------------------------------------------------------------
+PAIRS_PER_BLOCK = 10  # pairs per table cell
+COL_GAP = 1.0         # gap between cells in x
+ROW_GAP = 0.6         # gap between cells in y (instead of PAD_GAP)
+MARGIN_L, MARGIN_R = 6.0, 3.0            # room for row letters on the left
+MARGIN_T, MARGIN_B = 4.5, 4.5            # room for column numbers top/bottom
+ID_COLS, ID_ROWS = 3, 3   # cells left out bottom right for the label field
+MASK_MARGIN = 0.1     # solder mask clearance around each cell
 
-SILK_H, SILK_W, SILK_T = 1.0, 0.8, 0.15  # JLC: min. 1.0 mm hoch, 0.15 mm Strich
+SILK_H, SILK_W, SILK_T = 1.0, 0.8, 0.15  # JLC: min. 1.0 mm height, 0.15 mm stroke
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bonding_test.kicad_pcb")
 
-# ---- abgeleitete Geometrie -----------------------------------------------
+# ---- derived geometry ---------------------------------------------------
 pitch = PAD_W + PAD_GAP
-# Pads liegen waagerecht: Pärchen entlang x, Pärchen einer Zelle in y gestapelt
+# pads are horizontal: a pair runs along x, the pairs of a cell are stacked in y
 block_w = 2 * PAD_LEN + PAIR_GAP
 block_pitch = block_w + COL_GAP
-pair_h = (PAIRS_PER_BLOCK - 1) * pitch + PAD_W   # Höhe einer Zelle
+pair_h = (PAIRS_PER_BLOCK - 1) * pitch + PAD_W   # height of one cell
 row_pitch = pair_h + ROW_GAP
 
 n_cols = int((BOARD_W - MARGIN_L - MARGIN_R + COL_GAP) // block_pitch)
 n_rows = int((BOARD_H - MARGIN_T - MARGIN_B + ROW_GAP) // row_pitch)
 grid_w = n_cols * block_pitch - COL_GAP
 grid_h = n_rows * row_pitch - ROW_GAP
-# Raster im verfügbaren Bereich zentrieren
+# centre the grid in the available area
 x0 = MARGIN_L + (BOARD_W - MARGIN_L - MARGIN_R - grid_w) / 2
 y0 = MARGIN_T + (BOARD_H - MARGIN_T - MARGIN_B - grid_h) / 2
 
 board = pcbnew.NewBoard(OUT)
-board.SetCopperLayerCount(2)  # KiCad-Minimum; B.Cu bleibt leer -> als 1-lagig bestellbar
+board.SetCopperLayerCount(2)  # KiCad minimum; B.Cu stays empty -> can be ordered as 1-layer
 
 ds = board.GetDesignSettings()
 ds.m_TrackMinWidth = FromMM(0.10)
@@ -79,7 +83,7 @@ def text(s, x, y, layer=pcbnew.F_SilkS, h=SILK_H, w=SILK_W, t=SILK_T):
     board.Add(tx)
 
 
-# ---- Umriss --------------------------------------------------------------
+# ---- Outline -------------------------------------------------------------
 edge = pcbnew.PCB_SHAPE(board)
 edge.SetShape(pcbnew.SHAPE_T_RECT)
 edge.SetStart(P(0, 0))
@@ -88,17 +92,17 @@ edge.SetLayer(pcbnew.Edge_Cuts)
 edge.SetWidth(FromMM(0.1))
 board.Add(edge)
 
-# ---- Zellen --------------------------------------------------------------
+# ---- Cells ---------------------------------------------------------------
 rows = string.ascii_uppercase[:n_rows]
 cu_only = pcbnew.LSET()
 cu_only.AddLayer(pcbnew.F_Cu)
 
 for r, letter in enumerate(rows):
-    ry = y0 + r * row_pitch                       # Oberkante der Zeile
+    ry = y0 + r * row_pitch                       # top edge of the row
     for c in range(n_cols):
         if r >= n_rows - ID_ROWS and c >= n_cols - ID_COLS:
-            continue                              # Platz für das ID-Feld
-        bx = x0 + c * block_pitch                 # linke Kante der Zelle
+            continue                              # room for the ID field
+        bx = x0 + c * block_pitch                 # left edge of the cell
         cx, cy = bx + block_w / 2, ry + pair_h / 2
 
         fp = pcbnew.FOOTPRINT(board)
@@ -127,7 +131,7 @@ for r, letter in enumerate(rows):
                 pad.SetPosition(P(px, py))
                 fp.Add(pad)
 
-        # eine durchgehende Lötstopp-Öffnung pro Zelle (keine Stege zwischen Pads)
+        # one continuous solder mask opening per cell (no webs between pads)
         m = pcbnew.PCB_SHAPE(fp)
         m.SetShape(pcbnew.SHAPE_T_RECT)
         m.SetStart(P(bx - MASK_MARGIN, ry - MASK_MARGIN))
@@ -139,13 +143,13 @@ for r, letter in enumerate(rows):
 
     text(letter, MARGIN_L / 2, ry + pair_h / 2, h=1.5, w=1.2, t=0.2)
 
-# ---- Spaltennummern oben und unten ---------------------------------------
+# ---- Column numbers top and bottom ---------------------------------------
 for c in range(n_cols):
     cx = x0 + c * block_pitch + block_w / 2
     for y in (y0 - 1.6, y0 + grid_h + 1.6):
         text(str(c + 1), cx, y)
 
-# ---- Beschriftungsfeld (PCB-ID, mit Edding) unten rechts ------------------
+# ---- Label field (PCB ID, for a marker pen) bottom right -----------------
 fx0 = x0 + (n_cols - ID_COLS) * block_pitch
 fy0 = y0 + (n_rows - ID_ROWS) * row_pitch
 fx1, fy1 = x0 + grid_w, y0 + grid_h
@@ -158,13 +162,13 @@ field.SetLayer(pcbnew.F_SilkS)
 field.SetWidth(0)
 field.SetFilled(True)
 board.Add(field)
-print(f"ID-Feld: {fx1 - fx0 - 0.3:.1f} x {fy1 - fy0 - 1.7:.1f} mm")
+print(f"ID field: {fx1 - fx0 - 0.3:.1f} x {fy1 - fy0 - 1.7:.1f} mm")
 
 text(f"BOND TEST  pad {PAD_W:.2f} x {PAD_LEN:.1f}  gap {PAIR_GAP:.1f}  pitch {pitch:.2f} mm",
      BOARD_W / 2, BOARD_H - 1.2)
 
 pcbnew.SaveBoard(OUT, board)
-print(f"{n_rows} Zeilen x {n_cols} Zellen x {PAIRS_PER_BLOCK} "
-      f"abzüglich {ID_ROWS}x{ID_COLS} Zellen fürs ID-Feld = "
-      f"{(n_rows * n_cols - ID_ROWS * ID_COLS) * PAIRS_PER_BLOCK} Pad-Pärchen, Pitch {pitch:.2f} mm")
-print(f"Raster: x {x0:.2f}..{x0 + grid_w:.2f}, y {y0:.2f}..{y0 + grid_h:.2f}")
+print(f"{n_rows} rows x {n_cols} cells x {PAIRS_PER_BLOCK} "
+      f"minus {ID_ROWS}x{ID_COLS} cells for the ID field = "
+      f"{(n_rows * n_cols - ID_ROWS * ID_COLS) * PAIRS_PER_BLOCK} pad pairs, pitch {pitch:.2f} mm")
+print(f"Grid: x {x0:.2f}..{x0 + grid_w:.2f}, y {y0:.2f}..{y0 + grid_h:.2f}")

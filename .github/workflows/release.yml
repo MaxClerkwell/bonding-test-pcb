@@ -1,6 +1,6 @@
-name: JLCPCB-Fertigungsdaten
+name: JLCPCB production data
 
-# Ein Tag wie v1.0.0 erzeugt die Gerber-Daten und legt sie als Release an.
+# A tag such as v1.0.0 builds the Gerber data and publishes it as a release.
 on:
   push:
     tags: ["v*"]
@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: DRC und Gerber-Export (KiCad 10)
+      - name: DRC and Gerber export (KiCad 10)
         run: |
           docker run --rm --user root -v "$PWD":/work -w /work kicad/kicad:10.0 sh -euc '
             kicad-cli pcb drc --severity-error --exit-code-violations -o drc.rpt "$0"
@@ -31,16 +31,16 @@ jobs:
           ' "$BOARD"
           sudo chown -R "$(id -u):$(id -g)" out drc.rpt
 
-      - name: ZIP für den JLCPCB-Upload
+      - name: ZIP for the JLCPCB upload
         run: |
           rm -f out/*.gbrjob
           ls -l out
           (cd out && zip -9 "../$NAME-jlcpcb.zip" *)
 
-      - name: Release anlegen
+      - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" "$NAME-jlcpcb.zip" \
             --title "$GITHUB_REF_NAME" \
-            --notes "Gerber-Daten für JLCPCB (1- oder 2-lagig bestellbar, Rückseite leer). Oberfläche: ENIG."
+            --notes "Gerber data for JLCPCB (can be ordered as 1 or 2 layers, back side is empty). Surface finish: ENIG."

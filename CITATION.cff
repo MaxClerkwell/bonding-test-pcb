@@ -1,10 +1,11 @@
 cff-version: 1.2.0
-message: "Wenn du diese Platine verwendest, zitiere sie bitte wie folgt."
+message: "If you use this board, please cite it as below."
 type: dataset
-title: "bonding-test-pcb: Testplatine zum Einstellen eines Drahtbonders"
+title: "bonding-test-pcb: test board for setting up a wire bonder"
 authors:
   - family-names: Bökelmann
     given-names: Stephan
+    affiliation: "Ruhr University Bochum, Institute for Experimental Physics I (EP1), Hadrons and Nuclei group"
 version: 1.0.0
 date-released: 2026-11-17
 license: CC-BY-4.0
