@@ -6,7 +6,8 @@ authors:
   - family-names: Bökelmann
     given-names: Stephan
     affiliation: "Ruhr University Bochum, Institute for Experimental Physics I (EP1), Hadrons and Nuclei group"
-version: 1.0.0
+version: 1.1.0
+doi: 10.5281/zenodo.24319171
 date-released: 2026-11-17
 license: CC-BY-4.0
 repository-code: "https://github.com/MaxClerkwell/bonding-test-pcb"

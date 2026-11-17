@@ -7,13 +7,18 @@ Created by Stephan Bökelmann while working as a research associate at
 Ruhr University Bochum, Institute for Experimental Physics I (EP1),
 Hadrons and Nuclei group.
 
-Usage:  python3 generate_pcb.py
+Usage:  python3 generate_pcb.py   (needs the `qrencode` command line tool)
 All dimensions in mm. Adjust the parameters below and regenerate.
 """
 import os
 import string
+import subprocess
 import pcbnew
 from pcbnew import FromMM, VECTOR2I
+
+# ---- Release info (printed on the back side) ------------------------------
+VERSION = "v1.1.0"
+DOI = "10.5281/zenodo.24319171"
 
 # ---- Board ---------------------------------------------------------------
 BOARD_W, BOARD_H = 200.0, 100.0          # landscape
@@ -166,6 +171,111 @@ print(f"ID field: {fx1 - fx0 - 0.3:.1f} x {fy1 - fy0 - 1.7:.1f} mm")
 
 text(f"BOND TEST  pad {PAD_W:.2f} x {PAD_LEN:.1f}  gap {PAIR_GAP:.1f}  pitch {pitch:.2f} mm",
      BOARD_W / 2, BOARD_H - 1.2)
+
+# ---- Back side: release info, DOI, QR code, parameter log -----------------
+# Coordinates below are given as seen from the back (u runs left to right),
+# i.e. u = BOARD_W - x, and all text is mirrored.
+B = pcbnew.B_SilkS
+
+
+def btext(s, u, y, h=1.2, t=0.15, just="left"):
+    tx = pcbnew.PCB_TEXT(board)
+    tx.SetText(s)
+    tx.SetLayer(B)
+    tx.SetPosition(P(BOARD_W - u, y))
+    tx.SetTextSize(VECTOR2I(FromMM(h * 0.85), FromMM(h)))
+    tx.SetTextThickness(FromMM(t))
+    tx.SetMirrored(True)
+    tx.SetHorizJustify({"left": pcbnew.GR_TEXT_H_ALIGN_LEFT,
+                        "center": pcbnew.GR_TEXT_H_ALIGN_CENTER}[just])
+    tx.SetVertJustify(pcbnew.GR_TEXT_V_ALIGN_CENTER)
+    board.Add(tx)
+
+
+def bline(u1, y1, u2, y2, w=0.15):
+    ln = pcbnew.PCB_SHAPE(board)
+    ln.SetShape(pcbnew.SHAPE_T_SEGMENT)
+    ln.SetStart(P(BOARD_W - u1, y1))
+    ln.SetEnd(P(BOARD_W - u2, y2))
+    ln.SetLayer(B)
+    ln.SetWidth(FromMM(w))
+    board.Add(ln)
+
+
+def brect(u1, y1, u2, y2):
+    rc = pcbnew.PCB_SHAPE(board)
+    rc.SetShape(pcbnew.SHAPE_T_RECT)
+    rc.SetStart(P(BOARD_W - u1, y1))
+    rc.SetEnd(P(BOARD_W - u2, y2))
+    rc.SetLayer(B)
+    rc.SetWidth(0)
+    rc.SetFilled(True)
+    board.Add(rc)
+
+
+# -- info block (left) --
+btext("bonding-test-pcb", 3, 6.5, h=3.0, t=0.4)
+btext(VERSION, 3, 12.0, h=2.0, t=0.3)
+for k, line in enumerate([
+        "Test board for setting up a wire bonder",
+        "",
+        "Stephan Bökelmann",
+        "Ruhr University Bochum",
+        "Institute for Experimental Physics I (EP1)",
+        "Hadrons and Nuclei group",
+        "",
+        "License: CC BY 4.0",
+        f"Pad {PAD_LEN:.1f} x {PAD_W:.2f} mm, gap {PAIR_GAP:.1f} mm, pitch {pitch:.2f} mm",
+        "Fab: FR4, 1 oz Cu, ENIG"]):
+    if line:
+        btext(line, 3, 17.0 + k * 2.3)
+
+# -- QR code with the DOI link; silkscreen is white, so the *light* modules
+#    (including the quiet zone) are printed and the dark ones stay bare mask --
+QR_MODULE, QR_U, QR_Y = 0.6, 3.0, 42.0
+qr = subprocess.run(["qrencode", "-t", "ASCII", "-m", "4", "-l", "M", f"https://doi.org/{DOI}"],
+                    check=True, capture_output=True, text=True).stdout.splitlines()
+for j, row in enumerate(qr):
+    mods = [row[i] == "#" for i in range(0, len(row), 2)]
+    i = 0
+    while i < len(mods):                      # merge horizontal runs of light modules
+        if mods[i]:
+            i += 1
+            continue
+        k = i
+        while k < len(mods) and not mods[k]:
+            k += 1
+        brect(QR_U + i * QR_MODULE, QR_Y + j * QR_MODULE,
+              QR_U + k * QR_MODULE, QR_Y + (j + 1) * QR_MODULE)
+        i = k
+qr_size = len(qr) * QR_MODULE
+btext("DOI", QR_U + qr_size + 2, QR_Y + 3, h=2.0, t=0.3)
+btext(DOI, QR_U + qr_size + 2, QR_Y + 7.5, h=1.5, t=0.2)
+btext("https://doi.org/", QR_U + qr_size + 2, QR_Y + 12)
+btext(DOI, QR_U + qr_size + 2, QR_Y + 14.3)
+
+# -- fields to fill in by hand --
+for k, label in enumerate(["Date", "Operator", "Bonder", "Wire", "Tool"]):
+    y = 72.0 + k * 5.0
+    btext(label + ":", 3, y, h=1.5, t=0.2)
+    bline(16, y + 1.2, 70, y + 1.2)
+btext("JLCJLCJLCJLC", 3, 96.5, h=1.0)         # JLCPCB prints its order number here
+
+# -- parameter log: one line per table row of the front side --
+T_U0, T_Y0, T_RH = 76.0, 3.8, 4.2
+cols = [("Row", 10), ("US power", 22), ("Time", 22), ("Force", 22), ("Notes", 45)]
+t_u1 = T_U0 + sum(w for _, w in cols)
+t_y1 = T_Y0 + (n_rows + 1) * T_RH
+for k in range(n_rows + 2):
+    bline(T_U0, T_Y0 + k * T_RH, t_u1, T_Y0 + k * T_RH, w=0.3 if k in (0, 1, n_rows + 1) else 0.15)
+u = T_U0
+for name, w in cols:
+    bline(u, T_Y0, u, t_y1, w=0.3 if u == T_U0 else 0.15)
+    btext(name, u + w / 2, T_Y0 + T_RH / 2, h=1.5, t=0.2, just="center")
+    u += w
+bline(t_u1, T_Y0, t_u1, t_y1, w=0.3)
+for r, letter in enumerate(rows):
+    btext(letter, T_U0 + cols[0][1] / 2, T_Y0 + (r + 1.5) * T_RH, h=2.0, t=0.3, just="center")
 
 pcbnew.SaveBoard(OUT, board)
 print(f"{n_rows} rows x {n_cols} cells x {PAIRS_PER_BLOCK} "

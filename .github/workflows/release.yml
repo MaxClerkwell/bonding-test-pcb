@@ -23,7 +23,7 @@ jobs:
             kicad-cli pcb drc --severity-error --exit-code-violations -o drc.rpt "$0"
             mkdir -p out
             kicad-cli pcb export gerbers \
-              --layers F.Cu,F.Mask,F.SilkS,B.Cu,B.Mask,Edge.Cuts \
+              --layers F.Cu,F.Mask,F.SilkS,B.Cu,B.Mask,B.SilkS,Edge.Cuts \
               --no-x2 --no-netlist --subtract-soldermask \
               -o out/ "$0"
             kicad-cli pcb export drill --format excellon --excellon-units mm \
@@ -43,4 +43,4 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" "$NAME-jlcpcb.zip" \
             --title "$GITHUB_REF_NAME" \
-            --notes "Gerber data for JLCPCB (can be ordered as 1 or 2 layers, back side is empty). Surface finish: ENIG."
+            --notes "Gerber data for JLCPCB (order as 2 layers so the back-side silkscreen is printed; the back copper is empty). Surface finish: ENIG."
