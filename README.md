@@ -31,7 +31,16 @@ kicad-cli pcb drc bonding_test.kicad_pcb
 
 ## Bestellung (JLCPCB)
 
-- Gerber liegen in `gerber/` (B.Cu ist leer; als 1- oder 2-lagig bestellbar)
+- Gerber-ZIP aus dem neuesten [Release](../../releases/latest) hochladen (B.Cu ist leer; als 1- oder 2-lagig bestellbar)
 - Oberfläche: **ENIG** – HASL ist zum Bonden ungeeignet
 - 1 oz Kupfer; 0,10 mm Strukturen liegen am Fertigungslimit, die reale Padbreite
   schwankt durch Ätztoleranz (ca. ±20 %)
+
+## Release
+
+Ein Tag `v*` startet die CI (`.github/workflows/release.yml`): DRC, Gerber-Export mit
+KiCad 10 und ein Release mit dem fertigen ZIP für JLCPCB.
+
+```sh
+git tag v1.0.1 && git push origin v1.0.1
+```

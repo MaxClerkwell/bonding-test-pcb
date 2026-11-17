@@ -1,0 +1,46 @@
+name: JLCPCB-Fertigungsdaten
+
+# Ein Tag wie v1.0.0 erzeugt die Gerber-Daten und legt sie als Release an.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      BOARD: bonding_test.kicad_pcb
+      NAME: bonding-test-pcb-${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: DRC und Gerber-Export (KiCad 10)
+        run: |
+          docker run --rm --user root -v "$PWD":/work -w /work kicad/kicad:10.0 sh -euc '
+            kicad-cli pcb drc --severity-error --exit-code-violations -o drc.rpt "$0"
+            mkdir -p out
+            kicad-cli pcb export gerbers \
+              --layers F.Cu,F.Mask,F.SilkS,B.Cu,B.Mask,Edge.Cuts \
+              --no-x2 --no-netlist --subtract-soldermask \
+              -o out/ "$0"
+            kicad-cli pcb export drill --format excellon --excellon-units mm \
+              --excellon-separate-th -o out/ "$0"
+          ' "$BOARD"
+          sudo chown -R "$(id -u):$(id -g)" out drc.rpt
+
+      - name: ZIP für den JLCPCB-Upload
+        run: |
+          rm -f out/*.gbrjob
+          ls -l out
+          (cd out && zip -9 "../$NAME-jlcpcb.zip" *)
+
+      - name: Release anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "$NAME-jlcpcb.zip" \
+            --title "$GITHUB_REF_NAME" \
+            --notes "Gerber-Daten für JLCPCB (1- oder 2-lagig bestellbar, Rückseite leer). Oberfläche: ENIG."
