@@ -9,11 +9,11 @@ Kein Schaltplan – die Platine wird von `generate_pcb.py` über die KiCad-Pytho
 
 | Größe | Wert |
 |---|---|
-| Pad | 0,10 × 5,0 mm (JLCPCB-Minimum Leiterbahnbreite, 1 oz) |
-| Pärchen | Pad – 0,5 mm Lücke – Pad (10,5 mm lang) |
-| Pad-Abstand seitlich | 0,15 mm (JLCPCB-Minimum Pad-zu-Pad) → Pitch 0,25 mm |
-| Tabelle | 8 Zeilen (A–H) × 68 Spalten, 10 Pärchen pro Zelle |
-| Gesamt | **5440 Pad-Pärchen** |
+| Pad | 5,0 × 0,10 mm, waagerecht (Breite = JLCPCB-Minimum Leiterbahnbreite, 1 oz) |
+| Pärchen | Pad – 0,5 mm Lücke – Pad, entlang x (10,5 mm lang) |
+| Abstand benachbarter Pärchen | 0,30 mm → Pitch 0,40 mm (JLCPCB-Minimum wäre 0,15 mm) |
+| Tabelle | 21 Zeilen (A–U) × 16 Spalten, 10 Pärchen pro Zelle (übereinander) |
+| Gesamt | **3360 Pad-Pärchen** |
 
 Jede Zelle hat eine durchgehende Lötstopp-Öffnung, es liegt also kein Lack zwischen
 oder neben den Pads. Zeilenbuchstaben und Spaltennummern stehen im Bestückungsdruck,

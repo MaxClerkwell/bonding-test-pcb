@@ -14,14 +14,14 @@ BOARD_W, BOARD_H = 200.0, 100.0          # Querformat
 
 # ---- Pads (JLCPCB-Limits, 1-2 Lagen, 1 oz) -------------------------------
 PAD_W = 0.10          # min. Leiterbahnbreite
-PAD_GAP_X = 0.15      # min. SMD-Pad-zu-Pad-Abstand
+PAD_GAP = 0.30        # Abstand benachbarter Pärchen (JLC-Minimum wäre 0.15)
 PAD_LEN = 5.0
 PAIR_GAP = 0.5        # Lücke zwischen den beiden Pads eines Pärchens (Bondstrecke)
 
 # ---- Tabelle -------------------------------------------------------------
 PAIRS_PER_BLOCK = 10  # Pärchen pro Tabellenzelle
-BLOCK_GAP = 0.45      # zusätzliche Lücke zwischen Zellen (statt PAD_GAP_X)
-ROW_GAP = 1.0
+COL_GAP = 1.0         # Lücke zwischen Zellen in x
+ROW_GAP = 0.6         # Lücke zwischen Zellen in y (statt PAD_GAP)
 MARGIN_L, MARGIN_R = 6.0, 3.0            # links Platz für Zeilenbuchstaben
 MARGIN_T, MARGIN_B = 4.5, 4.5            # oben/unten Platz für Spaltennummern
 MASK_MARGIN = 0.1     # Lötstopp-Freistellung um jede Zelle
@@ -31,15 +31,16 @@ SILK_H, SILK_W, SILK_T = 1.0, 0.8, 0.15  # JLC: min. 1.0 mm hoch, 0.15 mm Strich
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bonding_test.kicad_pcb")
 
 # ---- abgeleitete Geometrie -----------------------------------------------
-pitch = PAD_W + PAD_GAP_X
-block_w = (PAIRS_PER_BLOCK - 1) * pitch + PAD_W
-block_pitch = block_w + BLOCK_GAP
-pair_h = 2 * PAD_LEN + PAIR_GAP
+pitch = PAD_W + PAD_GAP
+# Pads liegen waagerecht: Pärchen entlang x, Pärchen einer Zelle in y gestapelt
+block_w = 2 * PAD_LEN + PAIR_GAP
+block_pitch = block_w + COL_GAP
+pair_h = (PAIRS_PER_BLOCK - 1) * pitch + PAD_W   # Höhe einer Zelle
 row_pitch = pair_h + ROW_GAP
 
-n_cols = int((BOARD_W - MARGIN_L - MARGIN_R + BLOCK_GAP) // block_pitch)
+n_cols = int((BOARD_W - MARGIN_L - MARGIN_R + COL_GAP) // block_pitch)
 n_rows = int((BOARD_H - MARGIN_T - MARGIN_B + ROW_GAP) // row_pitch)
-grid_w = n_cols * block_pitch - BLOCK_GAP
+grid_w = n_cols * block_pitch - COL_GAP
 grid_h = n_rows * row_pitch - ROW_GAP
 # Raster im verfügbaren Bereich zentrieren
 x0 = MARGIN_L + (BOARD_W - MARGIN_L - MARGIN_R - grid_w) / 2
@@ -109,14 +110,14 @@ for r, letter in enumerate(rows):
         board.Add(fp)
 
         for i in range(PAIRS_PER_BLOCK):
-            px = bx + PAD_W / 2 + i * pitch
-            for half, py in (("a", ry + PAD_LEN / 2),
-                             ("b", ry + PAD_LEN + PAIR_GAP + PAD_LEN / 2)):
+            py = ry + PAD_W / 2 + i * pitch
+            for half, px in (("a", bx + PAD_LEN / 2),
+                             ("b", bx + PAD_LEN + PAIR_GAP + PAD_LEN / 2)):
                 pad = pcbnew.PAD(fp)
                 pad.SetNumber(f"{i + 1}{half}")
                 pad.SetAttribute(pcbnew.PAD_ATTRIB_SMD)
                 pad.SetShape(pcbnew.F_Cu, pcbnew.PAD_SHAPE_RECT)
-                pad.SetSize(pcbnew.F_Cu, VECTOR2I(FromMM(PAD_W), FromMM(PAD_LEN)))
+                pad.SetSize(pcbnew.F_Cu, VECTOR2I(FromMM(PAD_LEN), FromMM(PAD_W)))
                 pad.SetLayerSet(cu_only)
                 pad.SetPosition(P(px, py))
                 fp.Add(pad)
