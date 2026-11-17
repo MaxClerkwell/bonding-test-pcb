@@ -25,8 +25,7 @@ Ruhr University Bochum, Institute for Experimental Physics I (EP1), Hadrons and 
 
 The back side carries silkscreen only: name, version, author and affiliation, the DOI
 as text and QR code, fields for date, operator, bonder, wire and tool, and a parameter
-log with one line per table row (US power, time, force, notes). JLCPCB places its order
-number on the `JLCJLCJLCJLC` marker there.
+log with one line per table row (US power, time, force, notes).
 
 Each cell has one continuous solder mask opening, so there is no mask between or next
 to the pads. Row letters and column numbers are on the silkscreen, e.g. cell `C17` for

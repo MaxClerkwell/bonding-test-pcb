@@ -17,7 +17,7 @@ import pcbnew
 from pcbnew import FromMM, VECTOR2I
 
 # ---- Release info (printed on the back side) ------------------------------
-VERSION = "v1.1.0"
+VERSION = "v1.1.1"
 DOI = "10.5281/zenodo.24319171"
 
 # ---- Board ---------------------------------------------------------------
@@ -259,7 +259,6 @@ for k, label in enumerate(["Date", "Operator", "Bonder", "Wire", "Tool"]):
     y = 72.0 + k * 5.0
     btext(label + ":", 3, y, h=1.5, t=0.2)
     bline(16, y + 1.2, 70, y + 1.2)
-btext("JLCJLCJLCJLC", 3, 96.5, h=1.0)         # JLCPCB prints its order number here
 
 # -- parameter log: one line per table row of the front side --
 T_U0, T_Y0, T_RH = 76.0, 3.8, 4.2
