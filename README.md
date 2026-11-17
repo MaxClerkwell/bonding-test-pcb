@@ -13,7 +13,8 @@ Kein Schaltplan – die Platine wird von `generate_pcb.py` über die KiCad-Pytho
 | Pärchen | Pad – 0,5 mm Lücke – Pad, entlang x (10,5 mm lang) |
 | Abstand benachbarter Pärchen | 0,30 mm → Pitch 0,40 mm (JLCPCB-Minimum wäre 0,15 mm) |
 | Tabelle | 21 Zeilen (A–U) × 16 Spalten, 10 Pärchen pro Zelle (übereinander) |
-| Gesamt | **3360 Pad-Pärchen** |
+| ID-Feld | unten rechts, 33,2 × 10,6 mm weiß gefüllter Bestückungsdruck zum Beschriften mit Edding (ersetzt 3 × 3 Zellen) |
+| Gesamt | **3270 Pad-Pärchen** |
 
 Jede Zelle hat eine durchgehende Lötstopp-Öffnung, es liegt also kein Lack zwischen
 oder neben den Pads. Zeilenbuchstaben und Spaltennummern stehen im Bestückungsdruck,

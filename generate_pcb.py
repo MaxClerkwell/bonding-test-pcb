@@ -24,6 +24,7 @@ COL_GAP = 1.0         # Lücke zwischen Zellen in x
 ROW_GAP = 0.6         # Lücke zwischen Zellen in y (statt PAD_GAP)
 MARGIN_L, MARGIN_R = 6.0, 3.0            # links Platz für Zeilenbuchstaben
 MARGIN_T, MARGIN_B = 4.5, 4.5            # oben/unten Platz für Spaltennummern
+ID_COLS, ID_ROWS = 3, 3   # unten rechts freigelassene Zellen für das Beschriftungsfeld
 MASK_MARGIN = 0.1     # Lötstopp-Freistellung um jede Zelle
 
 SILK_H, SILK_W, SILK_T = 1.0, 0.8, 0.15  # JLC: min. 1.0 mm hoch, 0.15 mm Strich
@@ -93,6 +94,8 @@ cu_only.AddLayer(pcbnew.F_Cu)
 for r, letter in enumerate(rows):
     ry = y0 + r * row_pitch                       # Oberkante der Zeile
     for c in range(n_cols):
+        if r >= n_rows - ID_ROWS and c >= n_cols - ID_COLS:
+            continue                              # Platz für das ID-Feld
         bx = x0 + c * block_pitch                 # linke Kante der Zelle
         cx, cy = bx + block_w / 2, ry + pair_h / 2
 
@@ -140,10 +143,26 @@ for c in range(n_cols):
     for y in (y0 - 1.6, y0 + grid_h + 1.6):
         text(str(c + 1), cx, y)
 
+# ---- Beschriftungsfeld (PCB-ID, mit Edding) unten rechts ------------------
+fx0 = x0 + (n_cols - ID_COLS) * block_pitch
+fy0 = y0 + (n_rows - ID_ROWS) * row_pitch
+fx1, fy1 = x0 + grid_w, y0 + grid_h
+text("PCB ID", (fx0 + fx1) / 2, fy0 + 0.7)
+field = pcbnew.PCB_SHAPE(board)
+field.SetShape(pcbnew.SHAPE_T_RECT)
+field.SetStart(P(fx0 + 0.3, fy0 + 1.7))
+field.SetEnd(P(fx1, fy1))
+field.SetLayer(pcbnew.F_SilkS)
+field.SetWidth(0)
+field.SetFilled(True)
+board.Add(field)
+print(f"ID-Feld: {fx1 - fx0 - 0.3:.1f} x {fy1 - fy0 - 1.7:.1f} mm")
+
 text(f"BOND TEST  pad {PAD_W:.2f} x {PAD_LEN:.1f}  gap {PAIR_GAP:.1f}  pitch {pitch:.2f} mm",
      BOARD_W / 2, BOARD_H - 1.2)
 
 pcbnew.SaveBoard(OUT, board)
-print(f"{n_rows} Zeilen x {n_cols} Zellen x {PAIRS_PER_BLOCK} = "
-      f"{n_rows * n_cols * PAIRS_PER_BLOCK} Pad-Pärchen, Pitch {pitch:.2f} mm")
+print(f"{n_rows} Zeilen x {n_cols} Zellen x {PAIRS_PER_BLOCK} "
+      f"abzüglich {ID_ROWS}x{ID_COLS} Zellen fürs ID-Feld = "
+      f"{(n_rows * n_cols - ID_ROWS * ID_COLS) * PAIRS_PER_BLOCK} Pad-Pärchen, Pitch {pitch:.2f} mm")
 print(f"Raster: x {x0:.2f}..{x0 + grid_w:.2f}, y {y0:.2f}..{y0 + grid_h:.2f}")
